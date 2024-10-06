@@ -37,7 +37,7 @@ const userschema = mongoose.Schema({
         required:true,
         ref: "Course"
     }],
-    inage:{
+    image:{
         type:String,    // type:string , because we want to add image URL
         required:true,
     },
