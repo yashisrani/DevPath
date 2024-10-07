@@ -3,6 +3,7 @@ const OTP = require('../Models/OTP')
 const bcrypt = require('bcryptjs')
 const otpgenerator = require('otp-generator')
 const Profile = require('../Models/Profile')
+const jwt = require('jsonwebtoken')
 // send OTP
 exports.sendOTP = async(req,res)=>{
     try{
@@ -92,7 +93,7 @@ exports.signup = async(req,res)=>{
             })
         }
 
-        // find resent otp stored in db 
+        // find recent otp stored in db 
         const recentopt = await OTP.find({email}).sort({createdAt:-1}).limit(1);
 
         // validate otp
@@ -137,6 +138,86 @@ exports.signup = async(req,res)=>{
     catch(err){
         res.status(500).json({
             message: "Error signup",
+            success: false
+        })
+    }
+}
+
+exports.login = async (req,res)=>{
+    try{
+        // fetch data from request body  (email, password)  from client
+        const{email, password} = req.body
+
+        // validate email and password
+        if(!email || !password){
+            return res.status(403).json({
+                message: "All fields are required",
+                success: false
+            })
+        }
+
+        // user exist or not 
+        const user = await User.findOne({email}).populate("additionaldetails")
+        if(!user){
+            return res.status(400).json({
+                message: "User does not exist",
+                success: false
+            })
+        }
+
+        // generate a jwt , after password matching
+        if(await bcrypt.compare(password, user.hashedPassword)){
+            const payload = {
+                email: user.email,
+                id: user._id,
+                accounttype: user.accounttype
+            }
+            const token = jwt.sign(payload, process.env.JWT_SECRET,{
+                expiresIn: '2h'
+            });
+            user.token = token
+            user.password = undefined
+
+            // create a cookies and response 
+        const options = {
+            expires: new Date(Date.now() + 2 * 60 * 60 * 1000),
+            httpOnly: true
+        }
+        res.cookie("token", token, options).status(200).json({
+            message: "Login successful",
+            success: true,
+            user: user,
+            token
+        })
+    }else{
+        return res.status(400).json({
+            message: "Incorrect password",
+            success: false
+        })
+    }
+ }
+    catch(err){
+        res.status(500).json({
+            message: "Error login",
+            success: false
+        })
+    }
+}
+
+// change password
+exports.changePassword = async (req,res)=>{
+    try{
+        // get data from req body
+        // get old password, new password, confirm password
+        // validate
+        // update password in db
+        // send email - password updated
+        // return response
+
+    }
+    catch(err){
+        res.status(500).json({
+            message: "Error change password",
             success: false
         })
     }
