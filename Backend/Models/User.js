@@ -37,6 +37,12 @@ const userschema = mongoose.Schema({
         required:true,
         ref: "Course"
     }],
+    token:{
+        type:String
+    },
+    resetPasswordExpires:{
+        type:Date
+    },
     image:{
         type:String,    // type:string , because we want to add image URL
         required:true,
